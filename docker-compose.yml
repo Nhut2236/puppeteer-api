@@ -9,6 +9,3 @@ services:
       - 4001:4001
     environment:
       - PORT=4001
-      - CLOUD_NAME=
-      - API_KEY=
-      - API_SECRET=
