@@ -8,7 +8,7 @@ image: node:10.15.3
 # deployment
 pipelines:
   branches:
-    master:
+    crawler_modified:
       - step:
           caches:
             - node
