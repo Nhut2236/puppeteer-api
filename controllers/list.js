@@ -5,7 +5,7 @@ const router = express();
 const openBrowser = async () => {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
+    headless: true,
   });
   const page = await browser.newPage();
   return {
@@ -44,11 +44,17 @@ const getProducts = async (page) => {
     items.forEach((item) => {
       let title = item.querySelector('h3')?.innerText.trim();
       let url = item.querySelector('a')?.getAttribute('href').trim();
-      let price = item.querySelector('.list-price span')?.innerText.replace('฿', '').trim();
-      let promotionPrice = item.querySelector('.list-price del')?.innerText.replace('฿', '').trim();
+      let price = item.querySelector('.list-price del')?.innerText.replace('฿', '').trim();
+      let promotionPrice = item.querySelector('.list-price span')?.innerText.replace('฿', '').trim();     
+
+      if (!price){
+        price = promotionPrice;
+        promotionPrice = null;
+      }
+      
       let thumbnail = item.querySelector('.img-wrapper img')?.getAttribute('src').trim();
       let salePercent = item.querySelector('.img-wrapper .label-sale')?.innerText.replace('-', '').replace('%','').trim();
-      let id = url.substring(url.indexOf('-') + 1, url.indexOf('?'));
+      let id = url.substring(url.indexOf('-') + 1, url.indexOf('-') + 7);
       let categoryId = url.substring(url.indexOf('=') + 1);
       let product = {
         "id": id ? parseInt(id) : 0,

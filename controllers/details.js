@@ -5,7 +5,7 @@ const router = express();
 const openBrowser = async () => {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
+    headless: true,
   });
   const page = await browser.newPage();
   return {
@@ -41,11 +41,17 @@ const getProductById = async (page, req) => {
   const selector = '.site-product';
   await page.goto(url);
   await page.waitForSelector(selector);
-  return await page.evaluate(selector => {
+  let product =  await page.evaluate(selector => {
     let item = document.querySelector(selector);
     let title = item.querySelector('.product-cart-sec h1')?.innerText.trim();
-    let price = item.querySelector('.wrapper-cart .head-cart span')?.innerText.replace('฿', '').trim();
-    let promotionPrice = item.querySelector('.wrapper-cart .head-cart del')?.innerText.replace('฿', '').trim();
+    let promotionPrice = item.querySelector('.wrapper-cart .head-cart .text-danger')?.innerText.replace('฿', '').trim();
+    let price = item.querySelector('.wrapper-cart .head-cart del')?.innerText.replace('฿', '').trim();
+    
+    if (!price){
+      price = promotionPrice;
+      promotionPrice = null;
+    }
+    
     let salePercent = item.querySelector('.wrapper-cart .head-cart .label-sale')?.innerText.replace('-', '').replace('%','').trim();
     let thumbnail = item.querySelector('.swiper-wrapper img')?.getAttribute('src').trim();
     let remainingAmount = item.querySelector('.product-action .align-items-end')?.innerText.replace('item(s)','').trim();
@@ -75,11 +81,17 @@ const getProductById = async (page, req) => {
     item.querySelectorAll('.recommend-sec .item').forEach((relatedProduct) => {
       let rTitle = relatedProduct.querySelector('h3')?.innerText.trim();
       let rUrl = relatedProduct.querySelector('a')?.getAttribute('href').trim();
-      let rPrice = relatedProduct.querySelector('.list-price span')?.innerText.replace('฿', '').trim();
-      let rPromotionPrice = relatedProduct.querySelector('.list-price del')?.innerText.replace('฿', '').trim();
+      let rPromotionPrice = relatedProduct.querySelector('.list-price span')?.innerText.replace('฿', '').trim();
+      let rPrice = relatedProduct.querySelector('.list-price del')?.innerText.replace('฿', '').trim();
+      
+      if (!rPrice){
+        rPrice = rPromotionPrice;
+        rPromotionPrice = null;
+      }
+
       let rThumbnail = relatedProduct.querySelector('.img-wrapper img')?.getAttribute('src').trim();
       let rSalePercent = relatedProduct.querySelector('.img-wrapper .label-sale')?.innerText.replace('-', '').replace('%','').trim();
-      let rId = rUrl.substring(rUrl.indexOf('-') + 1, rUrl.indexOf('?'));
+      let rId = rUrl.substring(rUrl.indexOf('-') + 1, rUrl.indexOf('-') + 7);
       let rCategoryId = rUrl.substring(rUrl.indexOf('=') + 1);
       let rProduct = {
         "id": rId ? parseInt(rId) : 0,
@@ -97,7 +109,7 @@ const getProductById = async (page, req) => {
     
     let product = {
       "title": title,
-      "price": price,
+      "price": price ? parseFloat(price).toFixed(2) : null,
       "promotion-price": promotionPrice ? parseFloat(promotionPrice).toFixed(2) : null,
       "sale-percent": salePercent ? parseFloat(salePercent).toFixed(2) : null,
       "is-sale": salePercent ? true : false,
@@ -111,6 +123,10 @@ const getProductById = async (page, req) => {
     };
     return product;
   }, selector);
+
+  product.id = parseInt(id);
+  product.category_id = parseInt(categoryId);
+  return product;
 };
 
 module.exports = router;
