@@ -8,7 +8,7 @@ const index = require("./controllers/index");
 const list = require("./controllers/list");
 const details = require("./controllers/details");
 
-const port = process.env.PORT || 4000;
+const port = 4000;
 
 app.use(bodyParser.json());
 app.use(cors("*"));
